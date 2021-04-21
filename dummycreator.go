@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type FileInfo struct {
@@ -27,10 +28,23 @@ func main() {
 
 	// You can get individual args with normal indexing.
 	path := os.Args[1]
+	dummyPath := path
 
 	fi, err := os.Stat(path)
 	if err != nil {
 		return
+	}
+
+	if len(os.Args) >= 3 {
+		trim := os.Args[2]
+
+		if trim != "" {
+			_, err := os.Stat(trim)
+			dummyPath = strings.ReplaceAll(dummyPath, filepath.Dir(trim), "")
+			if err != nil {
+				return
+			}
+		}
 	}
 
 	h, err := HashFile(path)
@@ -43,9 +57,9 @@ func main() {
 
 	fileJson, _ := json.Marshal([]FileInfo{h})
 
-	os.MkdirAll(filepath.Join("dummy/", filepath.Dir(path)), os.FileMode(0755))
-	err = ioutil.WriteFile(filepath.Join("dummy/", path), fileJson, 0644)
-	fmt.Println(filepath.Base(path) + " dummy created")
+	os.MkdirAll(filepath.Join("dummy/", filepath.Dir(dummyPath)), os.FileMode(0755))
+	err = ioutil.WriteFile(filepath.Join("dummy/", dummyPath), fileJson, 0644)
+	fmt.Println(filepath.Base(dummyPath) + " dummy created")
 }
 
 // HashFile generates a human readable hash of the given file path
